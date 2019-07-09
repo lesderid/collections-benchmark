@@ -1,0 +1,10 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"collections": "0.1.0",
+		"emsi_containers": "0.7.0",
+		"mir-algorithm": "3.5.0-alpha09",
+		"mir-core": "0.3.5",
+		"stdx-allocator": "2.77.5"
+	}
+}

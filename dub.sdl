@@ -1,0 +1,11 @@
+name "data-structures-benchmark"
+description "Benchmarking code for (@nogc) data structures"
+authors "lesderid"
+copyright "Copyright © 2019, Les De Ridder"
+license "NCSA"
+dependency "emsi_containers" version="~>0.7.0"
+dependency "collections" version="~>0.1.0"
+
+-- :/
+importPaths "/home/lesderid/repos/d/druntime/src"
+sourceFiles "/home/lesderid/repos/d/druntime/generated/linux/release/64/libdruntime.a"

@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/data-structures-benchmark
+data-structures-benchmark.so
+data-structures-benchmark.dylib
+data-structures-benchmark.dll
+data-structures-benchmark.a
+data-structures-benchmark.lib
+data-structures-benchmark-test-*
+*.exe
+*.o
+*.obj
+*.lst
