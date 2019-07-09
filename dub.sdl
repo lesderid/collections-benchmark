@@ -5,6 +5,7 @@ copyright "Copyright © 2019, Les De Ridder"
 license "NCSA"
 dependency "emsi_containers" version="~>0.7.0"
 dependency "collections" version="~>0.1.0"
+dependency "matplotlib-d" path="matplotlib-d"
 
 -- :/
 importPaths "/home/lesderid/repos/d/druntime/src"
