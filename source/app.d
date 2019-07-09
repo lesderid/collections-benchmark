@@ -1,5 +1,7 @@
 import util : make, rcarray, StdArray, StdxArray, EMSIArray;
+
 import std.stdio : stderr, writeln;
+import std.datetime : Duration;
 
 void testInsert(Container, int times = 100)()
 {
@@ -53,9 +55,8 @@ void testConcat(Container, int times = 100)()
 import std.meta : AliasSeq;
 alias tests = AliasSeq!(testInsert, testInsertDelete, testConcat);
 
-void testContainers(Containers...)(int times = 100000)
+auto testContainers(Containers...)(int times = 100000)
 {
-    import std.datetime : Duration;
     import std.datetime.stopwatch : benchmark;
     import std.meta : staticMap;
 
@@ -66,6 +67,11 @@ void testContainers(Containers...)(int times = 100000)
         results[test.stringof] = benchmark!(staticMap!(test, Containers))(times);
     }
 
+    return results;
+}
+
+void printResults(Containers...)(Duration[][string] results)
+{
     static foreach (test; tests)
     {
         import std.stdio : writeln;
@@ -80,7 +86,10 @@ void testContainers(Containers...)(int times = 100000)
 
 void main()
 {
-    import std.meta : AliasSeq, staticMap;
-    alias tests = AliasSeq!(testInsert, testInsertDelete);
-    testContainers!(int[], StdArray!int, StdxArray!int, EMSIArray!int, rcarray!int);
+    import std.meta : AliasSeq;
+
+    alias containers = AliasSeq!(int[], StdArray!int, StdxArray!int, EMSIArray!int, rcarray!int);
+
+    auto results = testContainers!containers;
+    results.printResults!containers;
 }
