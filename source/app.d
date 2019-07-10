@@ -1,12 +1,13 @@
-import util : make, rcarray, StdArray, StdxArray, EMSIArray;
+import util;
 
 import std.stdio : stderr, writeln;
 import std.datetime : Duration;
 
 import std.meta : AliasSeq;
 
-alias tests = AliasSeq!(testInsert, testInsertDelete, testConcat);
-alias containers = AliasSeq!(int[], StdArray!int, EMSIArray!int, rcarray!int, StdxArray!int);
+alias tests = AliasSeq!(testInsert, testDelete, testConcat);
+alias setupFuns = AliasSeq!(noSetup, makeAndInsert, makeAndInsert);
+alias containers = AliasSeq!(int[], StdArray!int, rcarray!int, EMSIArray!int, StdxArray!int);
 enum times = 100000;
 
 void testInsert(Container, size_t size = 100)()
@@ -15,7 +16,7 @@ void testInsert(Container, size_t size = 100)()
 
     //debug stderr.writeln("Testing inserts on ", typeof(container).stringof);
 
-    foreach (i; 0 .. size)
+    static foreach (i; 0 .. size)
     {
         container ~= 42;
     }
@@ -23,16 +24,9 @@ void testInsert(Container, size_t size = 100)()
     assert(container.length == size && container[size - 1] == 42);
 }
 
-void testInsertDelete(Container, size_t size = 100)()
+void testDelete(Container, size_t size = 100)(ref Container container)
 {
-    auto container = make!Container();
-
     //debug stderr.writeln("Testing inserts+deletes on ", typeof(container).stringof);
-
-    foreach (i; 0 .. size)
-    {
-        container ~= 42;
-    }
 
     foreach (i; 0 .. size)
     {
@@ -53,20 +47,11 @@ void testInsertDelete(Container, size_t size = 100)()
     assert(container.length == 0);
 }
 
-void testConcat(Container, size_t size = 100)()
+void testConcat(Container, size_t size = 100)(ref Container container)
 {
-    auto a = make!Container();
-    auto b = make!Container();
+    auto c = container ~ container;
 
-    foreach (i; 0 .. size / 2)
-    {
-        a ~= 1;
-        b ~= 2;
-    }
-
-    auto c = a ~ b;
-
-    assert(c.length == size);
+    assert(c.length == size * 2);
 }
 
 auto testContainers(Containers...)()
@@ -77,10 +62,12 @@ auto testContainers(Containers...)()
 
     Duration[][string] results;
 
-    static foreach (test; tests)
-    {
-        results[test.stringof] = benchmark!(staticMap!(test, Containers))(times).array;
-    }
+    static foreach (i, test; tests)
+    {{
+        alias ts = staticMap!(test, Containers);
+        alias ss = staticMap!(setupFuns[i], Containers);
+        results[test.stringof] = benchmarkWithSetup!(Transpose!(2, ts, ss))(times).array;
+    }}
 
     return results;
 }
@@ -104,14 +91,16 @@ void plotResults(Containers...)(Duration[][string] results)
     import plt = matplotlibd.pyplot;
 
     auto i = 0;
-    foreach (test, testResults; results)
+    foreach (test; tests)
     {
+        auto testResults = results[test.stringof];
+
         import std.range : iota;
         import std.algorithm : map;
         import std.array : array;
         import std.conv : to;
 
-        auto title = test ~ " (" ~ times.to!string ~ " runs)";
+        auto title = test.stringof ~ " (" ~ times.to!string ~ "x)";
         auto x = iota(testResults.length);
         auto height = testResults.map!(d => d.total!"msecs").array;
 
@@ -121,18 +110,23 @@ void plotResults(Containers...)(Duration[][string] results)
             names ~= Container.stringof;
         }
 
-        plt.subplot(results.length, 1, ++i);
+        i++;
+        //plt.subplot(results.length, 1, i);
+        plt.clf();
         plt.bar(x, height);
         plt.xticks(x, names);
         plt.ylabel("Time (ms)");
+        plt.ylim(0, 3000);
         plt.title(title);
+        plt.savefig("out/" ~ i.to!string ~ ".png", ["dpi": 500]);
     }
-    plt.show();
+    //plt.show();
 }
 
 void main()
 {
     auto results = testContainers!containers;
+
     results.printResults!containers;
     results.plotResults!containers;
 }
