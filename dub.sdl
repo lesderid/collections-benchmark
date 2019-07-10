@@ -8,5 +8,4 @@ dependency "collections" version="~>0.1.0"
 dependency "matplotlib-d" path="matplotlib-d"
 
 -- :/
-importPaths "/home/lesderid/repos/d/druntime/src"
-sourceFiles "/home/lesderid/repos/d/druntime/generated/linux/release/64/libdruntime.a"
+sourceFiles "../druntime/src/core/experimental/refcount.d" "../druntime/src/core/experimental/array.d"
