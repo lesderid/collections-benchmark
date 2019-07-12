@@ -30,7 +30,7 @@ T make(T : StdxArray!U, U)()
     return T();
 }
 
-T makeAndInsert(T, size_t size = 100)()
+T makeAndInsert(size_t size, T)()
 {
     T t = make!T();
 
@@ -42,7 +42,7 @@ T makeAndInsert(T, size_t size = 100)()
     return t;
 }
 
-T[2] makeAndInsert2(T, size_t totalSize = 100)()
+T[2] makeAndInsert2(size_t totalSize, T)()
 {
     T a = make!T();
     T b = make!T();

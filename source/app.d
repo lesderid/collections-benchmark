@@ -3,31 +3,74 @@ import util;
 import std.stdio : stderr, writeln;
 import std.datetime : Duration;
 
-import std.meta : AliasSeq;
+import std.meta : AliasSeq, ApplyLeft, staticMap, Instantiate;
 
-alias tests = AliasSeq!(testInsert, testDelete, testConcat, testMixed);
-alias setupFuns = AliasSeq!(noSetup, makeAndInsert, makeAndInsert, noSetup);
-enum testNames = ["100 inserts", "100 deletes", "Concat", "Mixed"];
+alias multiPhaseTests = AliasSeq!(testInsert, testDelete, testConcat);
+alias multiPhaseSetupFuns = AliasSeq!(makeAndInsert, makeAndInsert, makeAndInsert);
 
-alias containers = AliasSeq!(int[], StdArray!int, rcarray!int, EMSIArray!int, StdxArray!int);
-enum containerNames = ["[]", "Phobos Array", "rcarray", "EMSI Array", "stdx array"];
+enum phasesPerTest = 5;
 
-enum times = 100000;
+enum phaseSizes = [
+        //Inserts
+        (10 - 0), (50 - 10), (200 - 50), (1000 - 200), (10000-1000),
 
-void testInsert(Container, size_t size = 100)()
+        //Deletes
+        (10 - 0), (50 - 10), (200 - 50), (1000 - 200), (10000-1000),
+
+        //Concats
+        10,       50,        200,        1000,         10000,
+];
+
+enum phaseSetupSizes = [
+        //Inserts
+        0, 10, 50, 200, 1000,
+
+        //Deletes
+        10, 50, 200, 1000, 10000,
+
+        //Concats
+        10, 50, 200, 1000, 10000,
+];
+
+enum multiPhaseTestNames = ["Inserts", "Deletes", "Concat"];
+
+enum phaseNames = [
+        //Inserts
+        "0-10", "10-50", "50-200", "200-1000", "1000-10000",
+
+        //Deletes
+        "10-0", "50-10", "200-50", "1000-200", "10000-1000",
+
+        //Concats
+        "10+10", "50+50", "200+20", "1000+1000", "10000+10000",
+];
+
+enum runsPerMultiPhaseTest = 10000;
+
+alias singlePhaseTests = AliasSeq!(testMixed);
+alias singlePhaseSetupFuns = AliasSeq!(noSetup);
+
+enum singlePhaseTestNames = ["Mixed"];
+
+alias containers = AliasSeq!(rcarray!int, int[], StdArray!int, EMSIArray!int, StdxArray!int);
+enum containerNames = ["rcarray", "[]", "Phobos Array", "EMSI Array", "stdx array"];
+
+enum runsPerSinglePhaseTest = 1000000;
+
+void testInsert(size_t size, Container)(ref Container container)
 {
-    auto container = make!Container();
-
     static foreach (i; 0 .. size)
     {
         container ~= 42;
     }
 
-    assert(container.length == size && container[size - 1] == 42);
+    assert(container.length >= size && container[$ - 1] == 42);
 }
 
-void testDelete(Container, size_t size = 100)(ref Container container)
+void testDelete(size_t size, Container)(ref Container container)
 {
+    assert(container.length >= size);
+
     foreach (i; 0 .. size)
     {
         static if (is(Container : StdxArray!U, U))
@@ -44,10 +87,10 @@ void testDelete(Container, size_t size = 100)(ref Container container)
         }
     }
 
-    assert(container.length == 0);
+    assert(container.length >= 0);
 }
 
-void testConcat(Container, size_t size = 100)(ref Container container)
+void testConcat(size_t size, Container)(ref Container container)
 {
     auto c = container ~ container;
 
@@ -110,11 +153,24 @@ auto testContainers(Containers...)()
 
     Duration[][] results;
 
-    static foreach (i, test; tests)
+    static foreach (i, test; multiPhaseTests)
+    {
+        static foreach (j; i * phasesPerTest .. (i + 1) * phasesPerTest)
+        {{
+            enum phaseSize = phaseSizes[j];
+            enum phaseSetupSize = phaseSetupSizes[j];
+
+            alias ts = staticMap!(ApplyLeft!(test, phaseSize), Containers);
+            alias ss = staticMap!(ApplyLeft!(multiPhaseSetupFuns[i], phaseSetupSize), Containers);
+            results ~= benchmarkWithSetup!(Transpose!(2, ts, ss))(runsPerMultiPhaseTest).array;
+        }}
+    }
+
+    static foreach (i, test; singlePhaseTests)
     {{
         alias ts = staticMap!(test, Containers);
-        alias ss = staticMap!(setupFuns[i], Containers);
-        results ~= benchmarkWithSetup!(Transpose!(2, ts, ss))(times).array;
+        alias ss = staticMap!(singlePhaseSetupFuns[i], Containers);
+        results ~= benchmarkWithSetup!(Transpose!(2, ts, ss))(runsPerSinglePhaseTest).array;
     }}
 
     return results;
@@ -122,14 +178,30 @@ auto testContainers(Containers...)()
 
 void printResults(Containers...)(Duration[][] results)
 {
-    static foreach (i, test; tests)
+    import std.stdio : writeln;
+
+    static foreach (i, test; multiPhaseTests)
     {
-        import std.stdio : writeln;
+        writeln(test.stringof, ":");
+
+        static foreach (j; 0 .. phasesPerTest)
+        {
+            writeln("\t", "Phase ", j + 1, " (", phaseNames[i * phasesPerTest + j], ")");
+
+            static foreach (k, Container; Containers)
+            {
+                writeln("\t\t", Container.stringof, ": ", results[i * phasesPerTest + j][k]);
+            }
+        }
+    }
+
+    static foreach (i, test; singlePhaseTests)
+    {
         writeln(test.stringof, ":");
 
         static foreach (j, Container; Containers)
         {
-            writeln("\t", Container.stringof, ": ", results[i][j]);
+            writeln("\t", Container.stringof, ": ", results[multiPhaseTests.length * phasesPerTest + i][j]);
         }
     }
 }
@@ -138,27 +210,64 @@ void plotResults(Containers...)(Duration[][] results)
 {
     import plt = matplotlibd.pyplot;
 
-    foreach (i, test; tests)
-    {
-        auto testResults = results[i];
+    import std.range : iota;
+    import std.algorithm : map;
+    import std.array : array;
+    import std.conv : to;
 
-        import std.range : iota;
-        import std.algorithm : map;
-        import std.array : array;
-        import std.conv : to;
+    static foreach (i, test; multiPhaseTests)
+    {{
+        enum colours = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"];
+        static assert(Containers.length <= colours.length);
 
-        auto title = testNames[i] ~ " (" ~ times.to!string ~ " runs)";
+        auto testResults = results[i * phasesPerTest .. (i + 1) * phasesPerTest];
+        auto testPhaseNames = phaseNames[i * phasesPerTest .. (i + 1) * phasesPerTest];
+
+        plt.clf();
+
+        auto title = multiPhaseTestNames[i] ~ " (" ~ runsPerMultiPhaseTest.to!string ~ " runs per phase)";
+
+        double[] x = iota(phasesPerTest).map!(to!double).array;
+
+        enum barWidth = 0.8 / Containers.length;
+        static foreach (j; 0 .. Containers.length)
+        {{
+            auto height = testResults.map!(t => t.map!(r => r.total!"hnsecs")).map!(t => t[j].to!double / t[0]).array;
+
+            auto xs = x.dup;
+            xs[] = xs[] + j * barWidth;
+
+            plt.bar(xs, height, barWidth, ["color": colours[j], "label": containerNames[j]]);
+        }}
+
+        auto ticks = x.map!(t => t + barWidth + barWidth / 2).array;
+        plt.xticks(ticks, testPhaseNames);
+        plt.ylabel("Relative time (lower is better)");
+        plt.ylim(0, 2);
+        plt.axhline(1, ["color": "black"]);
+        plt.title(title);
+        plt.legend();
+        plt.savefig("out/" ~ i.to!string ~ ".png", ["dpi": 500]);
+    }}
+
+    static foreach (i, test; singlePhaseTests)
+    {{
+        auto testResults = results[multiPhaseTests.length * phasesPerTest + i];
+
+        auto title = singlePhaseTestNames[i] ~ " (" ~ runsPerSinglePhaseTest.to!string ~ " runs)";
         auto x = iota(testResults.length);
-        auto height = testResults.map!(d => d.total!"msecs").array;
+        auto height = testResults.map!(d => d.total!"msecs").map!(to!double).array;
+        height = height.map!(h => h / height[0]).array;
 
         plt.clf();
         plt.bar(x, height);
         plt.xticks(x, containerNames);
-        plt.ylabel("Time (ms)");
-        plt.ylim(0, 3000);
+        plt.ylabel("Relative time (lower is better)");
+        plt.ylim(0, 2);
+        plt.axhline(1, ["color": "black"]);
         plt.title(title);
-        plt.savefig("out/" ~ i.to!string ~ ".png", ["dpi": 500]);
-    }
+        plt.savefig("out/" ~ (multiPhaseTests.length + i).to!string ~ ".png", ["dpi": 500]);
+    }}
 }
 
 void main()
