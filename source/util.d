@@ -4,6 +4,7 @@ public import core.experimental.array : rcarray;
 public import std.container : StdArray = Array;
 public import containers : EMSIArray = DynamicArray;
 public import stdx.collections.array : StdxArray = Array;
+public import cppvector : StdVectorWrapper = VectorWrapper;
 
 public import core.experimental.array : make;
 
@@ -30,13 +31,55 @@ T make(T : StdxArray!U, U)()
     return T();
 }
 
+T make(T : StdVectorWrapper!U, U)()
+{
+    import cppvector : makeSizeTVectorWrapper, makeInt32VectorWrapper;
+
+    static if (is(U == size_t))
+    {
+        return StdVectorWrapper!U();
+    }
+    else static if (is(U == int))
+    {
+        return makeInt32VectorWrapper();
+    }
+    else
+    {
+        static assert(0);
+    }
+}
+
+void append(T, U)(ref T container, auto ref U elem)
+{
+    static if (is(T == StdVectorWrapper!U, U : V, V))
+    {
+        container.insert(elem);
+    }
+    else
+    {
+        container ~= elem;
+    }
+}
+
+auto ref concat(T)(ref T lhs, ref T rhs)
+{
+    static if (is(T == StdVectorWrapper!U, U))
+    {
+        return lhs.newFromConcat(&rhs);
+    }
+    else
+    {
+        return lhs ~ rhs;
+    }
+}
+
 T makeAndInsert(size_t size, T)()
 {
     T t = make!T();
 
-    static foreach (i; 0 .. size)
+    foreach (i; 0 .. size)
     {
-        t ~= 42;
+        t.append(42);
     }
 
     return t;
@@ -47,10 +90,10 @@ T[2] makeAndInsert2(size_t totalSize, T)()
     T a = make!T();
     T b = make!T();
 
-    static foreach (i; 0 .. totalSize / 2)
+    foreach (i; 0 .. totalSize / 2)
     {
-        a ~= 1;
-        b ~= 2;
+        a.append(1);
+        b.append(2);
     }
 
     return [a, b];
@@ -65,13 +108,13 @@ Duration[funs.length / 2] benchmarkWithSetup(funs...)(uint n)
     auto sw = StopWatch(AutoStart.no);
 
     static foreach (i; 0 .. funs.length / 2)
-    {{
-        alias fun = funs[i * 2];
-        alias setup = funs[i * 2 + 1];
-
+    {
         sw.reset();
         foreach (_; 0 .. n)
         {
+            alias fun = funs[i * 2];
+            alias setup = funs[i * 2 + 1];
+
             static if (is(typeof(setup()) == void))
             {
                 sw.start();
@@ -87,7 +130,7 @@ Duration[funs.length / 2] benchmarkWithSetup(funs...)(uint n)
             sw.stop();
         }
         result[i] = sw.peek();
-    }}
+    }
 
     return result;
 }

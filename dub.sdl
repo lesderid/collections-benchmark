@@ -7,5 +7,19 @@ dependency "emsi_containers" version="~>0.7.0"
 dependency "collections" version="~>0.1.0"
 dependency "matplotlib-d" path="matplotlib-d"
 
+preBuildCommands "clang++ -O3 -std=c++11 std_vector.cpp -c -o std_vector.o"
+
 -- :/
-sourceFiles "../druntime/src/core/experimental/refcount.d" "../druntime/src/core/experimental/array.d"
+sourceFiles "../druntime/src/core/experimental/rcptr.d" "../druntime/src/core/experimental/array.d" "std_vector.o"
+
+buildType "fast" {
+    buildOptions "noBoundsCheck" "releaseMode" "optimize" "inline"
+    dflags "-enable-cross-module-inlining" "-mcpu=native" "-flto=full"
+}
+
+buildType "debug" {
+    buildOptions "noBoundsCheck" "releaseMode" "debugInfo"
+    dflags "-fsanitize=address"
+}
+
+libs "stdc++"
