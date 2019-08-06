@@ -1,4 +1,4 @@
-module cppvector;
+module stlwrappers;
 
 extern(C++, class) struct VectorWrapper(T)
 {
@@ -20,3 +20,24 @@ extern(C++, class) struct VectorWrapper(T)
 
 extern(C++) VectorWrapper!size_t makeSizeTVectorWrapper();
 extern(C++) VectorWrapper!int makeInt32VectorWrapper();
+
+extern(C++, class) struct UnorderedMapWrapper(K, V)
+{
+    ~this();
+
+    void remove(K key);
+
+    size_t length();
+
+    alias opDollar = length;
+
+    void clear();
+
+    void insert(K key, V value);
+
+    V opIndex(K key);
+
+    ubyte[56] map; //HACK
+}
+
+extern(C++) UnorderedMapWrapper!(int, byte) makeIntByteUnorderedMapWrapper();

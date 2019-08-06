@@ -4,7 +4,7 @@ public import core.experimental.array : rcarray;
 public import std.container : StdArray = Array;
 public import containers : EMSIArray = DynamicArray;
 public import stdx.collections.array : StdxArray = Array;
-public import cppvector : StdVectorWrapper = VectorWrapper;
+public import stlwrappers : StdVectorWrapper = VectorWrapper, StdUnorderedMapWrapper = UnorderedMapWrapper;
 
 public import core.experimental.array : make;
 
@@ -33,7 +33,7 @@ T make(T : StdxArray!U, U)()
 
 T make(T : StdVectorWrapper!U, U)()
 {
-    import cppvector : makeSizeTVectorWrapper, makeInt32VectorWrapper;
+    import stlwrappers : makeSizeTVectorWrapper, makeInt32VectorWrapper;
 
     static if (is(U == size_t))
     {
@@ -42,6 +42,20 @@ T make(T : StdVectorWrapper!U, U)()
     else static if (is(U == int))
     {
         return makeInt32VectorWrapper();
+    }
+    else
+    {
+        static assert(0);
+    }
+}
+
+T make(T : StdUnorderedMapWrapper!(K, V), K, V)()
+{
+    import stlwrappers : makeIntByteUnorderedMapWrapper;
+
+    static if (is(K == int) && is(V == byte))
+    {
+        return makeIntByteUnorderedMapWrapper();
     }
     else
     {

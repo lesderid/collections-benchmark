@@ -1,4 +1,5 @@
 #include <vector>
+#include <unordered_map>
 #include <stdint.h>
 
 template<typename T>
@@ -61,3 +62,55 @@ VectorWrapper<int32_t> makeInt32VectorWrapper()
 
 template class VectorWrapper<size_t>;
 template class VectorWrapper<int32_t>;
+
+template<typename K, typename V>
+class UnorderedMapWrapper
+{
+public:
+    UnorderedMapWrapper() : map()
+    {
+    }
+
+    UnorderedMapWrapper(std::unordered_map<K, V> map) : map(map)
+    {
+    }
+
+    ~UnorderedMapWrapper()
+    {
+    }
+
+    size_t length()
+    {
+        return map.size();
+    }
+
+    void clear()
+    {
+        map.clear();
+    }
+
+    void remove(K key)
+    {
+        map.erase(key);
+    }
+
+    V operator[](K key)
+    {
+        return map[key];
+    }
+
+    void insert(K key, V value)
+    {
+        map[key] = value;
+    }
+
+private:
+    std::unordered_map<K, V> map;
+};
+
+UnorderedMapWrapper<int32_t, int8_t> makeIntByteUnorderedMapWrapper()
+{
+    return UnorderedMapWrapper<int32_t, int8_t>();
+}
+
+template class UnorderedMapWrapper<int32_t, int8_t>;
