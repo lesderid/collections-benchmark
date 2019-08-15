@@ -1,6 +1,7 @@
 module array;
 
-import util;
+import util.benchmark;
+import util.array;
 
 import std.stdio : stderr, writeln;
 import std.datetime : Duration;

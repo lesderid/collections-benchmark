@@ -10,7 +10,7 @@ dependency "matplotlib-d" path="matplotlib-d"
 preBuildCommands "clang++ -O3 -std=c++11 stlwrappers.cpp -c -o stlwrappers.o"
 
 -- :/
-sourceFiles "../druntime/src/core/experimental/rcptr.d" "../druntime/src/core/experimental/array.d" "stlwrappers.o"
+sourceFiles "../druntime/src/core/experimental/rcptr.d" "../druntime/src/core/experimental/array.d" "../druntime/src/core/experimental/slist.d" "../druntime/src/core/experimental/map.d" "stlwrappers.o"
 
 buildType "fast" {
     buildOptions "noBoundsCheck" "releaseMode" "optimize" "inline"
@@ -18,7 +18,7 @@ buildType "fast" {
 }
 
 buildType "debug" {
-    buildOptions "noBoundsCheck" "releaseMode" "debugInfo"
+    buildOptions "noBoundsCheck" "debugMode" "debugInfo"
     dflags "-fsanitize=address"
 }
 
