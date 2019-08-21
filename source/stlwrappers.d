@@ -37,6 +37,8 @@ extern(C++, class) struct UnorderedMapWrapper(K, V)
 
     V opIndex(K key);
 
+    bool contains(K key);
+
     ubyte[56] map; //HACK
 }
 

@@ -100,6 +100,11 @@ public:
         return map[key];
     }
 
+    bool contains(K key)
+    {
+        return map.contains(key);
+    }
+
     void insert(K key, V value)
     {
         map[key] = value;
