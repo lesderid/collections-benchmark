@@ -1,5 +1,6 @@
 #include <vector>
 #include <unordered_map>
+#include <forward_list>
 #include <stdint.h>
 
 template<typename T>
@@ -114,3 +115,55 @@ UnorderedMapWrapper<int32_t, int8_t> makeIntByteUnorderedMapWrapper()
 }
 
 template class UnorderedMapWrapper<int32_t, int8_t>;
+
+template<typename T>
+class ForwardListWrapper
+{
+public:
+    ForwardListWrapper() : list()
+    {
+    }
+
+    ForwardListWrapper(std::forward_list<T> list) : list(list)
+    {
+    }
+
+    ~ForwardListWrapper()
+    {
+    }
+
+    void length(size_t size)
+    {
+        list.resize(size);
+    }
+
+    void insertFront(T t)
+    {
+        list.push_front(t);
+    }
+
+    void removeFront()
+    {
+        return list.pop_front();
+    }
+
+    T front()
+    {
+        return list.front();
+    }
+
+    void remove(T t)
+    {
+        list.remove(t);
+    }
+
+private:
+    std::forward_list<T> list;
+};
+
+ForwardListWrapper<size_t> makeSizeTForwardListWrapper()
+{
+    return ForwardListWrapper<size_t>();
+}
+
+template class ForwardListWrapper<size_t>;

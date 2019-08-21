@@ -41,3 +41,22 @@ extern(C++, class) struct UnorderedMapWrapper(K, V)
 }
 
 extern(C++) UnorderedMapWrapper!(int, byte) makeIntByteUnorderedMapWrapper();
+
+extern(C++, class) struct ForwardListWrapper(T)
+{
+    ~this();
+
+    void length(size_t size);
+
+    void insertFront(T t);
+
+    void removeFront();
+
+    T front();
+
+    void remove(T t);
+
+    ubyte[8] list; //HACK
+}
+
+extern(C++) ForwardListWrapper!size_t makeSizeTForwardListWrapper();
