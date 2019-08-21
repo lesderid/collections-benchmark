@@ -7,9 +7,11 @@ import std.algorithm : canFind;
 
 int main(string[] args)
 {
-    if (args.length < 2)
+    auto collect = args.length >= 2 && args[1] == "--collect";
+
+    if (args.length < 2 || collect && args.length < 3)
     {
-        writeln("Usage: ", args[0], " <array/slist/map/all>");
+        writeln("Usage: ", args[0], " [--collect] <array/slist/map/all>");
 
         return 1;
     }
@@ -20,21 +22,21 @@ int main(string[] args)
     {
         mkdirRecurse("out/array");
 
-        benchmarkArrays();
+        benchmarkArrays(collect);
     }
 
     if (args.canFind("slist") || args.canFind("all"))
     {
         mkdirRecurse("out/slist");
 
-        benchmarkSLists();
+        benchmarkSLists(collect);
     }
 
     if (args.canFind("map") || args.canFind("all"))
     {
         mkdirRecurse("out/map");
 
-        benchmarkMaps();
+        benchmarkMaps(collect);
     }
 
     return 0;

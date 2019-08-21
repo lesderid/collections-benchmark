@@ -73,7 +73,7 @@ void testMixed1(Container)()
 
 }
 
-auto testContainers(Containers...)()
+auto testContainers(Containers...)(bool collect)
 {
     import std.datetime.stopwatch : benchmark;
     import std.meta : staticMap;
@@ -87,7 +87,7 @@ auto testContainers(Containers...)()
         {
             results ~= benchmarkWithSetup!(Transpose!(2,
                     staticMap!(ApplyLeft!(multiPhaseTests[i], phaseSizes[j]), Containers),
-                    staticMap!(ApplyLeft!(multiPhaseSetupFuns[i], phaseSetupSizes[j]), Containers)))(runsPerMultiPhaseTest).array;
+                    staticMap!(ApplyLeft!(multiPhaseSetupFuns[i], phaseSetupSizes[j]), Containers)))(runsPerMultiPhaseTest, collect).array;
         }
     }
 
@@ -95,7 +95,7 @@ auto testContainers(Containers...)()
     {
         alias ts = staticMap!(test, Containers);
         alias ss = staticMap!(singlePhaseSetupFuns[i], Containers);
-        results ~= benchmarkWithSetup!(Transpose!(2, ts, ss))(runsPerSinglePhaseTest).array;
+        results ~= benchmarkWithSetup!(Transpose!(2, ts, ss))(runsPerSinglePhaseTest, collect).array;
     }
 
     return results;
@@ -195,9 +195,9 @@ void plotResults(Containers...)(Duration[][] results)
     }
 }
 
-void benchmark()
+void benchmark(bool collect)
 {
-    auto results = testContainers!containers;
+    auto results = testContainers!containers(collect);
 
     results.printResults!containers;
     results.plotResults!containers;

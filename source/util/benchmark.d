@@ -2,7 +2,10 @@ module util.benchmark;
 
 import core.time : Duration;
 import std.datetime.stopwatch : StopWatch, AutoStart;
-Duration[funs.length / 2] benchmarkWithSetup(funs...)(uint n)
+
+import core.memory : GC;
+
+Duration[funs.length / 2] benchmarkWithSetup(funs...)(uint n, bool collect)
 {
     Duration[funs.length / 2] result;
 
@@ -11,6 +14,9 @@ Duration[funs.length / 2] benchmarkWithSetup(funs...)(uint n)
     static foreach (i; 0 .. funs.length / 2)
     {
         sw.reset();
+
+        if (collect) GC.collect();
+
         foreach (_; 0 .. n)
         {
             alias fun = funs[i * 2];
@@ -30,6 +36,14 @@ Duration[funs.length / 2] benchmarkWithSetup(funs...)(uint n)
 
             sw.stop();
         }
+
+        if (collect)
+        {
+            sw.start();
+            GC.collect();
+            sw.stop();
+        }
+
         result[i] = sw.peek();
     }
 
