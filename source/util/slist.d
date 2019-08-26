@@ -1,11 +1,11 @@
 module util.slist;
 
-public import core.experimental.slist : rcslist;
+public import core.experimental.rc.slist : rcslist;
 public import containers : EMSISList = SList;
 public import std.container : StdSList = SList;
 public import stlwrappers : StdForwardListWrapper = ForwardListWrapper;
 
-public import core.experimental.slist : make;
+public import core.experimental.rc.slist : make;
 
 T make(T : StdSList!U, U)()
 {
@@ -35,7 +35,6 @@ void removeFront(T : EMSISList!U, U)(ref T container)
 {
     container.popFront();
 }
-
 
 void remove(T : StdSList!U, U, V)(ref T container, V value)
 if (is(V : U))

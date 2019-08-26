@@ -1,10 +1,10 @@
 module util.map;
 
-public import core.experimental.map : rcmap;
+public import core.experimental.rc.map : rcmap;
 public import containers : EMSIHashMap = HashMap;
 public import stlwrappers : StdUnorderedMapWrapper = UnorderedMapWrapper;
 
-public import core.experimental.map : make;
+public import core.experimental.rc.map : make;
 
 T make(T : V[K], K, V)()
 {

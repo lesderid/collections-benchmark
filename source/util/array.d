@@ -1,12 +1,12 @@
 module util.array;
 
-public import core.experimental.array : rcarray;
+public import core.experimental.rc.array : rcarray;
 public import std.container : StdArray = Array;
 public import containers : EMSIArray = DynamicArray;
 public import stdx.collections.array : StdxArray = Array;
 public import stlwrappers : StdVectorWrapper = VectorWrapper;
 
-public import core.experimental.array : make;
+public import core.experimental.rc.array : make;
 
 T make(T : U[], U)()
 {
